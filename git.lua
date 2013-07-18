@@ -1,4 +1,4 @@
-local cmd = ...
+local cmd = assert(..., "you forgot to specify a command")
 
 require 'lfs'
 
