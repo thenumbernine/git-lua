@@ -1,3 +1,5 @@
+#!/usr/bin/env lua -lluarocks.require
+
 local cmd = assert(..., "you forgot to specify a command")
 
 require 'lfs'
