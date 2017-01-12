@@ -1,4 +1,4 @@
-#!/usr/bin/env lua -lluarocks.require
+#!/usr/bin/env lua
 
 local cmd = assert(..., "you forgot to specify a command")
 
