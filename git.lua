@@ -15,8 +15,8 @@ local function recurse()
 				else
 					if attr.mode == 'directory' then
 						if f == '.git' then
-							print(cwd)
-							print('result',os.execute('git '..cmd))
+							io.stderr:write(cwd, ' ... ')
+							assert(os.execute('git '..cmd))
 						else
 							lfs.chdir(f)
 							recurse()
