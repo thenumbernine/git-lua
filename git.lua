@@ -9,11 +9,13 @@ local function recurse()
 	xpcall(function()
 		for f in lfs.dir('.') do
 			if f ~= '.' and f ~= '..' then
-				local attr = lfs.attributes(f)
+				local attr = lfs.symlinkattributes(f)
 				if attr == nil then
 					io.stderr:write('failed to get attributes for '..cwd..'/'..f..'\n')
 				else
-					if attr.mode == 'directory' then
+					if attr.mode == 'directory'
+					and not attr.target	-- and it's not a symlink
+					then
 						if f == '.git' then
 							io.stderr:write(cwd, ' ... ')
 							assert(os.execute('git '..cmd))
