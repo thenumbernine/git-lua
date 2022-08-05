@@ -33,6 +33,9 @@ local function recurse()
 								then
 									--print first line only
 									print(msg:match'^([^\r\n]*)')
+								elseif msg:match"^On branch (.*)%s+Your branch is up to date with 'origin/(.*)'%.%s+nothing to commit, working tree clean" then
+									-- only for this one, go ahead and merge the first \n
+									print((msg:gsub('[\r\n]', ' ')))
 								else
 									-- print all output for things like pulls and conflicts and merges
 									print(msg)
