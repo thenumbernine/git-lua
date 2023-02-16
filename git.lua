@@ -28,7 +28,9 @@ local function recurse()
 							local msg, err = io.readproc('git '..cmd..' 2>&1')
 							if msg then
 								-- if it is a known / simple message
-								if msg:match'^Already up to date'
+								-- sometimes it's "Already up to date"
+								-- sometimes it's "Already up-to-date"
+								if msg:match'^Already up.to.date'
 								or msg:match'^There is no tracking information for the current branch'
 								then
 									--print first line only
