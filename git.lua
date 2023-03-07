@@ -10,6 +10,7 @@ local function recurse()
 	local err
 	xpcall(function()
 		for f in file'.':dir() do
+			file(cwd):cd()
 			local attr = file(f):attr()
 			if attr == nil then
 				io.stderr:write('failed to get attributes for '..cwd..'/'..f..'\n')
