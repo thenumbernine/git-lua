@@ -4,9 +4,16 @@ local cmd = assert(..., "you forgot to specify a command")
 local io = require 'ext.io'	-- io.readproc
 
 local file = require 'ext.file'
--- in Windows in lfs 1.8.0 there's an error inside of 'symlinkattributes'
+
+-- in Windows in lfs 1.8.0 there's an error inside of 'symlinkattributes'. TODO work around inside ext.file?
+
+-- don't get stuck in recursion
+local checkedSoFar = {}
+
 local function recurse()
 	local cwd = file:cwd()
+	if checkedSoFar[cwd] then return end
+	checkedSoFar[cwd] = true
 	local err
 	xpcall(function()
 		for f in file'.':dir() do
