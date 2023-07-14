@@ -48,7 +48,7 @@ local function handleGitDir(reqdir)
 		err = msg..'\n'..debug.traceback()
 	end)
 	if err then
-		io.stderr:write(cwd..'\n'..err)
+		io.stderr:write(reqdir..'\n'..err)
 	end
 	file(srcdir):cd()
 end
