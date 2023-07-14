@@ -18,6 +18,10 @@ local function handleGitDir(reqdir)
 		if checkedSoFar[cwd] then return end
 		checkedSoFar[cwd] = true
 
+		-- TODO here launch a process and somehow wait for it to finish ...
+		-- how to monitor other than busy wait or temp files?
+-- start /b git cmd 2^>^&1 ... but that still waits to exit right?
+
 		io.stderr:write(cwd, ' ... ')
 		local msg
 		msg, err = io.readproc('git '..cmd..' 2>&1')
