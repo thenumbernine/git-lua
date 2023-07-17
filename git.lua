@@ -1,6 +1,6 @@
 #!/usr/bin/env lua
 local table = require 'ext.table'
-local file = require 'ext.file'
+local path = require 'ext.path'
 
 local cmd = assert(..., "you forgot to specify a command")
 local io = require 'ext.io'	-- io.readproc
@@ -8,12 +8,12 @@ local io = require 'ext.io'	-- io.readproc
 -- don't get stuck in recursion
 local checkedSoFar = {}
 
-local srcdir = file:cwd()
+local srcdir = path:cwd()
 local function handleGitDir(reqdir)
 	local err
 	xpcall(function()
-		file(reqdir):cd()
-		local cwd = file:cwd()
+		path(reqdir):cd()
+		local cwd = path:cwd()
 		-- TODO how to resolve cwd wrt symlinks?
 		if checkedSoFar[cwd] then return end
 		checkedSoFar[cwd] = true
@@ -50,11 +50,11 @@ local function handleGitDir(reqdir)
 	if err then
 		io.stderr:write(reqdir..'\n'..err)
 	end
-	file(srcdir):cd()
+	path(srcdir):cd()
 end
 
-file'.':rdir(function(f, isdir)
-	local dir, name = file(f):getdir()
+path'.':rdir(function(f, isdir)
+	local dir, name = path(f):getdir()
 	if name == '.git' and isdir then
 		handleGitDir(dir)
 		return true	-- don't continue
