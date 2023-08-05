@@ -2,20 +2,18 @@
 local path = require 'ext.path'
 local io = require 'ext.io'	-- io.readproc
 
-local url, cmd = ...
-assert(url, "expected url")
+local cmd = ...
 assert(cmd, "expected cmd")
-
 
 -- TODO here launch a process and somehow wait for it to finish ...
 -- how to monitor other than busy wait or temp files?
 -- start /b git cmd 2^>^&1 ... but that still waits to exit right?
 
 io.stderr:write(path:cwd(), ' ... ')
-local msg
-msg, err = io.readproc('git '..cmd..' 2>&1')
 print'... TODO'
 do return end
+local msg
+msg, err = io.readproc('git '..cmd..' 2>&1')
 
 if msg then
 	-- if it is a known / simple message
