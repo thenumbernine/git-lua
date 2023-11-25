@@ -56,7 +56,7 @@ end
 path'.':rdir(function(f, isdir)
 	local dir, name = path(f):getdir()
 	if name == '.git' and isdir then
-		handleGitDir(dir)
+		handleGitDir(dir:fixpathsep())
 		return true	-- don't continue
 	end
 	return true
