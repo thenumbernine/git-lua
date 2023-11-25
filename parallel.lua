@@ -40,7 +40,7 @@ xpcall(function()
 			error("can't handle this OS yet ... running in sequence")
 		end
 
-		path(srcdir):cd()
+		srcdir:cd()
 	end
 
 	local th = coroutine.create(function()

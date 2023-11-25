@@ -50,7 +50,7 @@ local function handleGitDir(reqdir)
 	if err then
 		io.stderr:write(reqdir..'\n'..err)
 	end
-	path(srcdir):cd()
+	srcdir:cd()
 end
 
 path'.':rdir(function(f, isdir)
