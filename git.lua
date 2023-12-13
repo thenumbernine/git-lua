@@ -13,7 +13,7 @@ local function handleGitDir(reqdir)
 	local err
 	xpcall(function()
 		path(reqdir):cd()
-		local cwd = path:cwd()
+		local cwd = path:cwd().path
 		-- TODO how to resolve cwd wrt symlinks?
 		if checkedSoFar[cwd] then return end
 		checkedSoFar[cwd] = true
