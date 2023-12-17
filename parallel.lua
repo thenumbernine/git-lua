@@ -77,7 +77,7 @@ xpcall(function()
 
 	path'.':rdir(function(f, isdir)
 		local dir, name = path(f):getdir()
-		if name == '.git' and isdir then
+		if name.path == '.git' and isdir then
 			print('adding '..dir..' to list to check')
 			tocheck:insert(dir:fixpathsep())
 			coroutine.resume(th)
