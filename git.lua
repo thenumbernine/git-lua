@@ -53,11 +53,11 @@ local function handleGitDir(reqdir)
 	srcdir:cd()
 end
 
-path'.':rdir(function(f, isdir)
+for f in path'.':rdir(function(f, isdir)
 	local dir, name = path(f):getdir()
 	if name.path == '.git' and isdir then
 		handleGitDir(dir:fixpathsep())
 		return true	-- don't continue
 	end
 	return true
-end)
+end) do end
