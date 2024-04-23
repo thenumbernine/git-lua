@@ -1,4 +1,4 @@
-#!/usr/bin/env lua
+#!/usr/bin/env luajit
 local table = require 'ext.table'
 local path = require 'ext.path'
 
