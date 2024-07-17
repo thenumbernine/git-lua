@@ -56,7 +56,9 @@ end
 
 for f in path'.':rdir(function(f, isdir)
 	local dir, name = path(f):getdir()
-	if name.path == '.git' and isdir then
+	if name.path == '.git'
+	--and isdir	-- submodule .git folders are coming back in `stat` as regular files ...
+	then
 		handleGitDir(dir:fixpathsep())
 		return true	-- don't continue
 	end
