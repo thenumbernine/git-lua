@@ -16,7 +16,16 @@ for f in path'.':rdir(function(f, isdir)
 	--and isdir	-- submodule .git folders are coming back in `stat` as regular files ...
 	then
 		xpcall(function()
-			rundir(cmd, dir:fixpathsep(), checkedSoFar)
+			dir:cd()
+
+			-- use cd+cwd to resolve symlinks
+			-- TODO how to resolve cwd wrt symlinks?
+			local cwd = path:cwd().path
+			if not checkedSoFar[cwd] then
+				checkedSoFar[cwd] = true
+
+				rundir(cmd)
+			end
 		end, function(err)
 			io.stderr:write(dir..'\n'..err..'\n'..debug.traceback())
 		end)

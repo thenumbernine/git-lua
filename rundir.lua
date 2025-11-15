@@ -3,22 +3,10 @@ local io = require 'ext.io'	-- io.readproc
 
 -- does chdir
 -- uses it to resolve symlinks and check for duplicates / loops
-local function rundir(cmd, reqdir, checkedSoFar)
-	-- use cd+cwd to resolve symlinks
-	if reqdir then
-		path(reqdir):cd()
-	end
+local function rundir(cmd)
 	assert(path'.git':isdir())
 
-	local cwd = path:cwd().path
-
-	-- TODO how to resolve cwd wrt symlinks?
-	if checkedSoFar then
-		if checkedSoFar[cwd] then return end
-		checkedSoFar[cwd] = true
-	end
-
-	io.stderr:write(cwd, ' ... ')
+	io.stderr:write(path:cwd().path, ' ... ')
 	local msg, err = io.readproc('git '..cmd..' 2>&1')
 	if msg then
 		-- if it is a known / simple message
