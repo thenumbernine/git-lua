@@ -4,7 +4,7 @@ local io = require 'ext.io'	-- io.readproc
 -- does chdir
 -- uses it to resolve symlinks and check for duplicates / loops
 local function rundir(cmd)
-	assert(path'.git':isdir())
+	assert(path'.git':exists())
 
 	io.stderr:write(path:cwd().path, ' ... ')
 	local msg, err = io.readproc('git '..cmd..' 2>&1')
