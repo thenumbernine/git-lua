@@ -4,10 +4,6 @@ local rundir = require 'git.rundir'
 
 local cmd = assert(..., "you forgot to specify a command")
 
--- TODO here launch a process and somehow wait for it to finish ...
--- how to monitor other than busy wait or temp files?
--- start /b git cmd 2^>^&1 ... but that still waits to exit right?
-
 local srcdir = path:cwd()
 local checkedSoFar = {}
 for f in path'.':rdir(function(f, isdir)
