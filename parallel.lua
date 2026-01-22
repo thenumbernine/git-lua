@@ -45,9 +45,6 @@ xpcall(function()
 				'echo "done" >> "'..r.done..'"',
 			}:concat'\n'..'\n')
 
-			-- horrible parallelism ...
-			-- I should really find a package that does ipc / parallelism for me
-			-- hmmmmm why isn't the > working.
 			local status, msg, errcode = os.execute('bash "'..r.shell..'" >/dev/null 2>/dev/null &')
 			if not status then
 				print(r.dir, 'failed with error', msg, errcode)
