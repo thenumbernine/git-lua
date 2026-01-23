@@ -1,6 +1,5 @@
 #!/usr/bin/env luajit
 local ffi = require 'ffi'
-local template = require 'template'
 local table = require 'ext.table'
 local range = require 'ext.range'
 local tolua = require 'ext.tolua'
@@ -35,35 +34,30 @@ do
 	local tocheckUnique = table()
 	for _,reqdir in ipairs(tocheck) do
 		path(reqdir):cd()
-		tocheckUnique[path:cwd().path] = true
+		local absreqdir = path:cwd().path
+		srcdir:cd()
+		tocheckUnique[absreqdir] = true
 	end
-	srcdir:cd()
 	tocheck = table.keys(tocheckUnique):sort()
 end
 
 -- don't collect
-_G.tocheck = tocheck
-
 local writeMutex = require 'thread.mutex'()
 _G.writeMutex = writeMutex 
 
 local Pool = require 'thread.pool'
 local pool = Pool{
+	-- concurrency ... double it just because half of these are going to get stuck on something or another
+	size = 2 * require 'thread'.numThreads(),
 	userdata = ffi.cast('void*', writeMutex.id),
-	initcode = function(pool, index)
-		return template([[
-local tocheck = <?=tocheck?>	-- just copying the whole thing
-local cmd = <?=cmd?>
+	-- runs once upon init
+	initcode = [[
+local io = require 'ext.io'
+local path = require 'ext.path'
 local writeMutex = require 'thread.mutex':wrap(userdata)
 ]],
-			{
-				tocheck = tolua(tocheck),
-				cmd = tolua(cmd),
-			})
-	end,
-	code = function(pool, index)
-		return template([[
--- index == threadIndex
+	-- runs per cycle
+	code = [[
 local i = tonumber(pool.taskIndex)+1
 local reqdir = tocheck[i]
 
@@ -71,12 +65,14 @@ local reqdir = tocheck[i]
 -- ... except without any cd'ing
 -- ... and with a mutex around the output
 
-assert(path(reqdir)'.git':exists())
+-- hmm none of the entries are . but somehow it is looking for one entry of .git at ./.git ....
+local gitpath = path(reqdir)'.git'
+if not gitpath:exists() then
+	error("expected to find "..gitpath)
+end
 
 local msg, err = io.readproc('cd "'..reqdir..'"; git '..cmd..' 2>&1')
 
-writeMutex:lock()
-io.stderr:write(reqdir, ' ... ')
 if msg then
 	-- if it is a known / simple message
 	-- sometimes it's "Already up to date"
@@ -86,22 +82,29 @@ if msg then
 	or msg:match'^There is no tracking information for the current branch'
 	then
 		--print first line only
-		print(msg:match'^([^\r\n]*)')
+		msg = msg:match'^([^\r\n]*)'
 	elseif msg:match"^On branch(.*)%s+Your branch is up.to.date with 'origin/(.*)'%.%s+nothing to commit, working tree clean" then
 		-- only for this one, go ahead and merge the first \n
-		print((msg:gsub('[\r\n]', ' ')))
+		msg = msg:gsub('[\r\n]', ' ')
 	else
 		-- print all output for things like pulls and conflicts and merges
-		print(msg)
 	end
 else
 	error('ERROR '..err)
 end
-print(i, reqdir, writeMutex.id)
+
+writeMutex:lock()
+print(reqdir..' ... '..tostring(msg))
 writeMutex:unlock()
-]])
-	end,
+]],
 }
+-- write our Lua args
+for _,worker in ipairs(pool) do
+	local WG = worker.thread.lua.global
+	WG.tocheck = tocheck
+	WG.cmd = cmd
+end
+
 pool:cycle(#tocheck)
 pool:closed()
 
