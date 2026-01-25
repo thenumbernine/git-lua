@@ -1,8 +1,6 @@
 #!/usr/bin/env luajit
 local ffi = require 'ffi'
 local table = require 'ext.table'
-local range = require 'ext.range'
-local tolua = require 'ext.tolua'
 local path = require 'ext.path'
 
 
