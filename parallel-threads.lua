@@ -8,13 +8,6 @@ local path = require 'ext.path'
 
 local srcdir = path:cwd()
 
--- chdir to source dir
---local luagitdir = path(package.searchpath('git.parallel', package.path):gsub('\\', '/')):getdir()
-path(arg[0]):getdir():cd()
-local luagitdir = path:cwd()
-srcdir:cd()
-
-
 local cmd = assert(..., "you forgot to specify a command")
 
 
@@ -29,7 +22,7 @@ for f in path'.':rdir(function(f, isdir)
 	return true
 end) do end
 
--- filter out unique
+-- filter out unique dirs
 do
 	local tocheckUnique = table()
 	for _,reqdir in ipairs(tocheck) do
@@ -41,24 +34,33 @@ do
 	tocheck = table.keys(tocheckUnique):sort()
 end
 
--- don't collect
+-- one thread writes to stdout at a time
 local writeMutex = require 'thread.mutex'()
-_G.writeMutex = writeMutex 
+_G.writeMutex = writeMutex
 
 local Pool = require 'thread.pool'
 local pool = Pool{
 	-- concurrency ... double it just because half of these are going to get stuck on something or another
-	size = 2 * require 'thread'.numThreads(),
+	--size = 2 * require 'thread'.numThreads(),
+	-- init the threads' LUa state:
+	threadInit = function(thread)
+		-- write our Lua args
+		local WG = thread.lua.global
+		WG.tocheck = tocheck
+		WG.cmd = cmd
+	end,
+	-- what to pass to the threads' pool-init code:
 	userdata = ffi.cast('void*', writeMutex.id),
 	-- runs once upon init
 	initcode = [[
 local io = require 'ext.io'
 local path = require 'ext.path'
+local table = require 'ext.table'
 local writeMutex = require 'thread.mutex':wrap(userdata)
 ]],
 	-- runs per cycle
 	code = [[
-local i = tonumber(pool.taskIndex)+1
+local i = tonumber(pool.taskIndex)
 local reqdir = tocheck[i]
 
 -- NOTICE the rest is the same as rundir.lua ...
@@ -68,10 +70,17 @@ local reqdir = tocheck[i]
 -- hmm none of the entries are . but somehow it is looking for one entry of .git at ./.git ....
 local gitpath = path(reqdir)'.git'
 if not gitpath:exists() then
-	error("expected to find "..gitpath)
+	error("expected to find "..gitpath.." from reqdir "..tostring(reqdir).." = tocheck["..tostring(i)..']')
 end
 
-local msg, err = io.readproc('cd "'..reqdir..'"; git '..cmd..' 2>&1')
+local msg, err = io.readproc(table{
+	'cd "'..reqdir..'"',
+	';',
+	'git',
+	cmd,
+	'</dev/null',	-- don't wait for input
+	'2>&1',	-- stderr to stdout
+}:concat' ')
 
 if msg then
 	-- if it is a known / simple message
@@ -98,20 +107,7 @@ print(reqdir..' ... '..tostring(msg))
 writeMutex:unlock()
 ]],
 }
--- write our Lua args
-for _,worker in ipairs(pool) do
-	local WG = worker.thread.lua.global
-	WG.tocheck = tocheck
-	WG.cmd = cmd
-end
 
 pool:cycle(#tocheck)
 pool:closed()
-
-for i,worker in ipairs(pool) do
-	local exitStatus = worker.thread.lua.global.exitStatus
-	if not exitStatus then
-		local errmsg = worker.thread.lua.global.errmsg
-		io.stderr:write('worker '..i..' got error '..errmsg..'\n')
-	end
-end
+pool:showErrs()
