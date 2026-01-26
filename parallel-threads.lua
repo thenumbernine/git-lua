@@ -6,7 +6,7 @@ local path = require 'ext.path'
 
 local srcdir = path:cwd()
 
-local cmd = assert(..., "you forgot to specify a command")
+local gitcmd = assert(..., "you forgot to specify a command")
 
 
 local maxConcurrent = 4	-- = require 'thread'.numThreads()
@@ -45,12 +45,13 @@ local pool = Pool{
 		-- write our Lua args
 		local WG = thread.lua.global
 		WG.tocheck = tocheck
-		WG.cmd = cmd
+		WG.gitcmd = gitcmd
 	end,
 	-- what to pass to the threads' pool-init code:
 	userdata = ffi.cast('void*', writeMutex.id),
 	-- runs once upon init
 	initcode = [[
+local ffi = require 'ffi'
 local io = require 'ext.io'
 local path = require 'ext.path'
 local table = require 'ext.table'
@@ -71,14 +72,15 @@ if not gitpath:exists() then
 	error("expected to find "..gitpath.." from reqdir "..tostring(reqdir).." = tocheck["..tostring(i)..']')
 end
 
-local msg, err = io.readproc(table{
+local cmd = table{
 	'cd "'..reqdir..'"',
-	';',
+	ffi.os == 'Windows' and '&' or ';',
 	'git',
-	cmd,
-	'</dev/null',	-- don't wait for input
+	gitcmd,
+	ffi.os == 'Windows' and '<NUL' or '</dev/null',	-- don't wait for input
 	'2>&1',	-- stderr to stdout
-}:concat' ')
+}:concat' '
+local msg, err = io.readproc(cmd)
 
 if msg then
 	-- if it is a known / simple message
