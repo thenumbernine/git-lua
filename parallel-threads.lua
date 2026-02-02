@@ -36,6 +36,11 @@ end
 local writeMutex = require 'thread.mutex'()
 _G.writeMutex = writeMutex
 
+
+local setlib = require 'ffi.req' 'c.stdlib'
+setlib.setenv('GIT_TERMINAL_PROMPT', '0', 1)	-- don't wait for input
+
+
 local Pool = require 'thread.pool'
 local pool = Pool{
 	-- concurrency ... double it just because half of these are going to get stuck on something or another
@@ -73,13 +78,14 @@ if not gitpath:exists() then
 end
 
 local cmd = table{
-	'cd "'..reqdir..'"',
-	ffi.os == 'Windows' and '&' or ';',
-	'git',
-	gitcmd,
-	ffi.os == 'Windows' and '<NUL' or '</dev/null',	-- don't wait for input
-	'2>&1',	-- stderr to stdout
-}:concat' '
+	'cd '..path(reqdir):escape(),
+	'git '..gitcmd..' 2>&1',	-- stderr to stdout
+}:concat(
+	ffi.os == 'Windows'
+	and ' & '
+	or ' ; '
+)
+
 local msg, err = io.readproc(cmd)
 
 if msg then
