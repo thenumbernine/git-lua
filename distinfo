@@ -1,0 +1,19 @@
+--------------------------------------------
+-- generated with dist/build-distinfo.rua --
+--------------------------------------------
+
+name = "git"
+files = {
+	"README.md",
+	"git.lua",
+	"parallel-threads.lua",
+	"parallel.lua",
+	"parallel_url.lua",
+	"rundir.lua",
+}
+deps = {
+	"ext",
+	"ffi",
+	"thread",
+	"threadmanager",
+}
