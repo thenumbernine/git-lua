@@ -88,28 +88,41 @@ local cmd = table{
 
 local msg, err = io.readproc(cmd)
 
-if msg then
-	-- if it is a known / simple message
-	-- sometimes it's "Already up to date"
-	-- sometimes it's "Already up-to-date"
-	if msg:match'^Already up.to.date'
-	or msg:match'^Everything up.to.date'
-	or msg:match'^There is no tracking information for the current branch'
-	then
-		--print first line only
-		msg = msg:match'^([^\r\n]*)'
-	elseif msg:match"^On branch(.*)%s+Your branch is up.to.date with 'origin/(.*)'%.%s+nothing to commit, working tree clean" then
-		-- only for this one, go ahead and merge the first \n
-		msg = msg:gsub('[\r\n]', ' ')
-	else
-		-- print all output for things like pulls and conflicts and merges
-	end
-else
+if not msg then
 	error('ERROR '..err)
 end
 
+local response
+-- if it is a known / simple message
+
+-- git pull response:
+-- sometimes it's "Already up to date"
+-- sometimes it's "Already up-to-date"
+if msg:match'^Already up.to.date'
+or msg:match'^Everything up.to.date'
+or msg:match'^There is no tracking information for the current branch'
+then
+	--print first line only
+	msg = msg:match'^([^\r\n]*)'
+	response = '✅ '..reqdir..' ... '..tostring(msg)
+
+-- git status response:
+elseif msg:match"^On branch(.*)%s+Your branch is up.to.date with 'origin/(.*)'%.%s+nothing to commit, working tree clean" then
+	-- only for this one, go ahead and merge the first \n
+	msg = msg:gsub('[\r\n]', ' ')
+	response = '✅ '..reqdir..' ... '..tostring(msg)
+
+-- git pull response, getting new files:
+elseif msg:match'^From ' then
+	response = '⬇️ '..reqdir..' ... '..tostring(msg)
+else
+
+	-- print all output for things like pulls and conflicts and merges
+	response = '❌ '..reqdir..' ... '..tostring(msg)
+end
+
 writeMutex:lock()
-print(reqdir..' ... '..tostring(msg))
+print(response)
 writeMutex:unlock()
 ]],
 }
