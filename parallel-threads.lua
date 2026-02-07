@@ -202,11 +202,11 @@ elseif lines[1]:match'^On branch' then
 
 	-- git status, commits to push
 	if lines[2]:match'^Your branch is ahead' then
-		local summary = lines[2]
 		if lines[5] and lines[5]:match'^Changes not staged' then
-			summary = summary .. ' ' .. lines[5]
+			response = '❌⬆️ '..reqdir..' ... '..lines[2]..' '..lines[5]
+		else
+			response = '⬆️ '..reqdir..' ... '..lines[2]
 		end
-		response = '⬆️ '..reqdir..' ... '..summary
 
 	-- git status, all is well
 	elseif lines[2] and lines[2]:match'Your branch is up.to.date'
