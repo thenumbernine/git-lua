@@ -209,9 +209,12 @@ elseif lines[1]:match'^On branch' then
 		end
 
 	-- git status, all is well
-	elseif lines[2] and lines[2]:match'Your branch is up.to.date'
+	elseif lines[2] and lines[2]:match'^Your branch is up.to.date'
 	and lines[3] and lines[3] == ''
-	and lines[4] and lines[4]:match'nothing to commit, working tree clean'
+	and lines[4] and (
+		lines[4]:match'^nothing to commit, working tree clean'
+		or lines[4]:match'^nothing added to commit but untracked files present'
+	)
 	then
 		response = '✅ '..reqdir..' ... '..tostring(lines[4])
 
