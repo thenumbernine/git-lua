@@ -96,7 +96,7 @@ end
 local lines = string.split(string.trim(msg), '\n')
 
 local response
--- if it is a known response, parse it and emojify it 
+-- if it is a known response, parse it and emojify it
 
 
 -- while we're here, remove the "Untracked files:" section
@@ -120,10 +120,11 @@ end
 
 -- sometimes it's "Already up to date"
 -- sometimes it's "Already up-to-date"
-if lines[1]:match'^Already up.to.date'
-or lines[1]:match'^Everything up.to.date'
+if (lines[1]:match'^Already up.to.date'
+	or lines[1]:match'^Everything up.to.date'
+) and #lines == 1
 then
-	response = '✅ '..reqdir..' ... '..tostring(lines[1])
+	response = '✅ '..reqdir
 
 elseif lines[1]
 and lines[1]:match'^There is no tracking information for the current branch'
@@ -131,7 +132,7 @@ then
 	response = '💡 '..reqdir..' ... '..tostring(lines[1])
 
 elseif lines[1]:match'^From ' then
-	
+
 	-- format is:
 	--From $(url)
 	--   $(commit1)..$(commit2)    -> $(remote)/$(branch)
@@ -140,16 +141,16 @@ elseif lines[1]:match'^From ' then
 	-- $(list-of-files)
 	-- $(howmany) file(s?) changed, $(m) insertions(+), $(n) deletions(-)
 	-- $(create/delete messages)
-	
+
 	-- if something goes wrong (like there would be an overwrite), format is:
 	--From $(url)
 	--   $(commit1)..$(commit2)    -> $(remote)/$(branch)
 	--error: $(errmsg)
 	--...
 	--Aborting
-	
+
 	local foundError = (lines[3] and lines[3]:match'^error:') or lines:last() == 'Aborting'
-	
+
 	if not foundError
 	and (lines[3] and lines[3]:match'^Updating')
 	and (lines[4] and lines[4]:match'^Fast%-forward')
@@ -165,7 +166,7 @@ elseif lines[1]:match'^From ' then
 	end
 
 
----------------- git status response ---------------- 
+---------------- git status response ----------------
 
 
 elseif lines[1]:match'^On branch' then
@@ -174,7 +175,7 @@ elseif lines[1]:match'^On branch' then
 
 	-- first line: "On branch $(branch)"
 
-	-- next line, if there's no extra changes to pull: 
+	-- next line, if there's no extra changes to pull:
 	--"Your branch is up to date with '$(remote)/$(branch)'."
 	--""
 	-- TODO otherwise... what does it say
@@ -208,16 +209,30 @@ elseif lines[1]:match'^On branch' then
 			response = '⬆️ '..reqdir..' ... '..lines[2]
 		end
 
-	-- git status, all is well
-	elseif lines[2] and lines[2]:match'^Your branch is up.to.date'
-	and lines[3] and lines[3] == ''
-	and lines[4] and (
-		lines[4]:match'^nothing to commit, working tree clean'
-		or lines[4]:match'^nothing added to commit but untracked files present'
-	)
-	then
-		response = '✅ '..reqdir..' ... '..tostring(lines[2])
+	elseif lines[2]:match'^Your branch is behind' then
+		local summary = lines[2]
+		if lines[5] and lines[5]:match'^Changes not staged' then
+			summary = summary .. ' ' .. lines[5]
+		end
+		response = '❌⬇️ '..reqdir..' ... '..summary
 
+	-- git status, all is well
+	elseif lines[2] and lines[2]:match'^Your branch is up.to.date' then
+		if lines[3] and lines[3] == ''
+		and lines[4] and (
+			lines[4]:match'^nothing to commit, working tree clean'
+			or lines[4]:match'^nothing added to commit but untracked files present'
+		)
+		and #lines == 4
+		then
+			response = '✅ '..reqdir
+
+		elseif lines[4] and lines[4]:match'^Changes not staged for commit' then
+			response = '❌⬆️ '..reqdir..' ... '..lines[2]..' '..lines[4]
+
+		else
+			response = '❌ '..reqdir..' ... '..tostring(msg)
+		end
 	else
 
 		response = '❌ '..reqdir..' ... '..tostring(msg)
