@@ -113,6 +113,15 @@ elseif msg:match'^There is no tracking information for the current branch' then
 
 -- git pull response, getting new files:
 elseif msg:match'^From ' then
+	
+	-- format is:
+	--From $(url)
+	--   $(commit1)..$(commit2)    -> $(remote)/$(branch)
+	--Updating $(commit1)..$(commit2)
+	--Fast-forward
+	-- $(list-of-files)
+	-- $(howmany) file(s?) changed, $(m) insertions(+), $(n) deletions(-)
+	-- $(create/delete messages)
 	response = '⬇️ '..reqdir..' ... '..tostring(msg)
 
 -- git status response:
