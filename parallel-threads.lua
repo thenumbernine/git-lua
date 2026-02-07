@@ -216,7 +216,7 @@ elseif lines[1]:match'^On branch' then
 		or lines[4]:match'^nothing added to commit but untracked files present'
 	)
 	then
-		response = '✅ '..reqdir..' ... '..tostring(lines[4])
+		response = '✅ '..reqdir..' ... '..tostring(lines[2])
 
 	else
 
