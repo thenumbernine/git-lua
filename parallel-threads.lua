@@ -168,7 +168,8 @@ elseif lines[1]:match'^From ' then
 ---------------- git status response ---------------- 
 
 
-elseif msg:match"^On branch(.*)%s+Your branch is up.to.date with 'origin/(.*)'%.%s+nothing to commit, working tree clean" then
+elseif lines[1]:match'^On branch' then
+
 	-- only for this one, go ahead and merge the first \n
 
 	-- first line: "On branch $(branch)"
@@ -199,9 +200,25 @@ elseif msg:match"^On branch(.*)%s+Your branch is up.to.date with 'origin/(.*)'%.
 	--""
 	--"nothing added to commit but untracked files present (use...)"
 
-	msg = msg:gsub('[\r\n]', ' ')
-	response = '✅ '..reqdir..' ... '..tostring(msg)
+	-- git status, commits to push
+	if lines[2]:match'^Your branch is ahead' then
+		local summary = lines[2]
+		if lines[5] and lines[5]:match'^Changes not staged' then
+			summary = summary .. ' ' .. lines[5]
+		end
+		response = '⬆️ '..reqdir..' ... '..summary
 
+	-- git status, all is well
+	elseif lines[2] and lines[2]:match'Your branch is up.to.date'
+	and lines[3] and lines[3] == ''
+	and lines[4] and lines[4]:match'nothing to commit, working tree clean'
+	then
+		response = '✅ '..reqdir..' ... '..tostring(lines[4])
+
+	else
+
+		response = '❌ '..reqdir..' ... '..tostring(msg)
+	end
 
 -- all else:
 else
