@@ -93,8 +93,26 @@ if not msg then
 	error('ERROR '..err)
 end
 
+local lines = string.split(string.trim(msg), '\n')
+
 local response
--- if it is a known / simple message
+-- if it is a known response, parse it and emojify it 
+
+
+-- while we're here, remove the "Untracked files:" section
+for k=1,#lines do
+	if lines[k] == 'Untracked files:' then
+		local j=k+1
+		while j <= #lines do
+			if lines[j] == '' then break end
+			j=j+1
+		end
+		-- now either lines[j] is empty or j is past the end
+		lines = lines:sub(1,k-1):append(lines:sub(j+1))
+		msg = lines:concat'\n'
+		break
+	end
+end
 
 
 ---------------- git pull responses: ----------------
@@ -102,19 +120,17 @@ local response
 
 -- sometimes it's "Already up to date"
 -- sometimes it's "Already up-to-date"
-if msg:match'^Already up.to.date'
-or msg:match'^Everything up.to.date'
+if lines[1]:match'^Already up.to.date'
+or lines[1]:match'^Everything up.to.date'
 then
-	--print first line only
-	msg = msg:match'^([^\r\n]*)'
-	response = '✅ '..reqdir..' ... '..tostring(msg)
+	response = '✅ '..reqdir..' ... '..tostring(lines[1])
 
-elseif msg:match'^There is no tracking information for the current branch' then
-	--print first line only
-	msg = msg:match'^([^\r\n]*)'
-	response = '💡 '..reqdir..' ... '..tostring(msg)
+elseif lines[1]
+and lines[1]:match'^There is no tracking information for the current branch'
+then
+	response = '💡 '..reqdir..' ... '..tostring(lines[1])
 
-elseif msg:match'^From ' then
+elseif lines[1]:match'^From ' then
 	
 	-- format is:
 	--From $(url)
@@ -131,8 +147,6 @@ elseif msg:match'^From ' then
 	--error: $(errmsg)
 	--...
 	--Aborting
-
-	local lines = string.split(string.trim(msg), '\n'):mapi(string.trim)
 	
 	local foundError = (lines[3] and lines[3]:match'^error:') or lines:last() == 'Aborting'
 	
@@ -163,14 +177,20 @@ elseif msg:match"^On branch(.*)%s+Your branch is up.to.date with 'origin/(.*)'%.
 	--"Your branch is up to date with '$(remote)/$(branch)'."
 	--""
 	-- TODO otherwise... what does it say
+	--
+	-- otehrwise if you didi commit but haven't pusehd:
+	--"Your branch is ahead of '$(remote)/$(branch)' by (%d) commits?."
+	--"  (use ...)"
 
 	-- next, if there's no other commits to push and no other files uncommitted:
 	--"nothing to commit, working tree clean"
 
-	-- if there are commits to push:
+	-- if there are changes that haven't been committed:
 	--"Changes not staged for commit:"
 	--  (use ...)"
 	--  (use ...)"
+	--""
+	--"no changes added to commit (use...)"
 
 	-- if there aren't commits to push but there are untracked files:
 	--"Untracked files:"
@@ -182,8 +202,9 @@ elseif msg:match"^On branch(.*)%s+Your branch is up.to.date with 'origin/(.*)'%.
 	msg = msg:gsub('[\r\n]', ' ')
 	response = '✅ '..reqdir..' ... '..tostring(msg)
 
-else
 
+-- all else:
+else
 	-- print all output for things like pulls and conflicts and merges
 	response = '❌ '..reqdir..' ... '..tostring(msg)
 end
