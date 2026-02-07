@@ -60,6 +60,7 @@ local ffi = require 'ffi'
 local io = require 'ext.io'
 local path = require 'ext.path'
 local table = require 'ext.table'
+local string = require 'ext.string'
 local writeMutex = require 'thread.mutex':wrap(userdata)
 ]],
 	-- runs per cycle
@@ -95,7 +96,10 @@ end
 local response
 -- if it is a known / simple message
 
--- git pull response:
+
+---------------- git pull responses: ----------------
+
+
 -- sometimes it's "Already up to date"
 -- sometimes it's "Already up-to-date"
 if msg:match'^Already up.to.date'
@@ -105,13 +109,11 @@ then
 	msg = msg:match'^([^\r\n]*)'
 	response = '✅ '..reqdir..' ... '..tostring(msg)
 
--- git pull response:
 elseif msg:match'^There is no tracking information for the current branch' then
 	--print first line only
 	msg = msg:match'^([^\r\n]*)'
 	response = '💡 '..reqdir..' ... '..tostring(msg)
 
--- git pull response, getting new files:
 elseif msg:match'^From ' then
 	
 	-- format is:
@@ -122,11 +124,61 @@ elseif msg:match'^From ' then
 	-- $(list-of-files)
 	-- $(howmany) file(s?) changed, $(m) insertions(+), $(n) deletions(-)
 	-- $(create/delete messages)
-	response = '⬇️ '..reqdir..' ... '..tostring(msg)
+	
+	-- if something goes wrong (like there would be an overwrite), format is:
+	--From $(url)
+	--   $(commit1)..$(commit2)    -> $(remote)/$(branch)
+	--error: $(errmsg)
+	--...
+	--Aborting
 
--- git status response:
+	local lines = string.split(string.trim(msg), '\n'):mapi(string.trim)
+	
+	local foundError = (lines[3] and lines[3]:match'^error:') or lines:last() == 'Aborting'
+	
+	if not foundError
+	and (lines[3] and lines[3]:match'^Updating')
+	and (lines[4] and lines[4]:match'^Fast%-forward')
+	-- now comes the file list ...
+	-- then a summary: " %d files changed, %d insertions(+), %d deletions(-)"
+	-- then a list of create/delete files ...
+	then
+		-- try to get the summary line
+		response = '⬇️ '..reqdir..' ... '..tostring(msg:match'%d+ files? change[^\r\n]*')
+	else
+		-- didn't parse, mabye it's an error
+		response = '❌ '..reqdir..' ... '..tostring(msg)
+	end
+
+
+---------------- git status response ---------------- 
+
+
 elseif msg:match"^On branch(.*)%s+Your branch is up.to.date with 'origin/(.*)'%.%s+nothing to commit, working tree clean" then
 	-- only for this one, go ahead and merge the first \n
+
+	-- first line: "On branch $(branch)"
+
+	-- next line, if there's no extra changes to pull: 
+	--"Your branch is up to date with '$(remote)/$(branch)'."
+	--""
+	-- TODO otherwise... what does it say
+
+	-- next, if there's no other commits to push and no other files uncommitted:
+	--"nothing to commit, working tree clean"
+
+	-- if there are commits to push:
+	--"Changes not staged for commit:"
+	--  (use ...)"
+	--  (use ...)"
+
+	-- if there aren't commits to push but there are untracked files:
+	--"Untracked files:"
+	--"  (use ...)"
+	--"  $(list-of-files)"
+	--""
+	--"nothing added to commit but untracked files present (use...)"
+
 	msg = msg:gsub('[\r\n]', ' ')
 	response = '✅ '..reqdir..' ... '..tostring(msg)
 
