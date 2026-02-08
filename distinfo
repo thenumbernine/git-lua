@@ -5,11 +5,14 @@
 name = "git"
 files = {
 	"README.md",
-	"sequential.lua",
+	"distinfo",
+	"getgits.lua",
+	"git.sh",
+	"oneline.lua",
+	"parallel-shell-perrepo.lua",
 	"parallel-shell.lua",
 	"parallel-threads.lua",
-	"parallel_url.lua",
-	"rundir.lua",
+	"sequential.lua",
 }
 deps = {
 	"ext",
