@@ -159,7 +159,7 @@ elseif lines[1]:match'^From ' then
 	-- then a list of create/delete files ...
 	then
 		-- try to get the summary line
-		response = '⬇️ '..reqdir..' ... '..tostring(msg:match'%d+ files? change[^\r\n]*')
+		response = '⬇️  '..reqdir..' ... '..tostring(msg:match'%d+ files? change[^\r\n]*')
 	else
 		-- didn't parse, mabye it's an error
 		response = '❌ '..reqdir..' ... '..tostring(msg)
