@@ -27,8 +27,8 @@ xpcall(function()
 		-- prevent symlinks piling up
 		path(reqdir):cd()
 		local cwd = path:cwd()
-		if checkedCWDs[cwd] then return end
-		checkedCWDs[cwd] = true
+		if checkedCWDs[cwd.path] then return end
+		checkedCWDs[cwd.path] = true
 
 		local r = {}
 		r.dir = cwd
@@ -41,7 +41,11 @@ xpcall(function()
 
 		if ffi.os == 'Linux' then
 			path(r.shell):write(table{
-				'luajit "'..luagitdir..'/parallel_url.lua" "'..cmd..'" > "'..r.output..'"',
+				'luajit "'..luagitdir..'/parallel-shell-perrepo.lua" '
+					..cwd:escape()
+					..' "'..cmd
+					..'" > "'..r.output
+					..'"',
 				'echo "done" >> "'..r.done..'"',
 			}:concat'\n'..'\n')
 
@@ -73,7 +77,7 @@ xpcall(function()
 				for i=#checking,1,-1 do
 					local r = checking[i]
 					if path(r.done):exists() then	-- done
-						print(r.dir..' ... '..string.trim(path(r.output):read()))
+						print(string.trim(path(r.output):read()))
 						path(r.done):remove()
 						path(r.output):remove()
 						path(r.shell):remove()
