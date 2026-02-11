@@ -26,11 +26,18 @@ return function(reqdir, gitcmd)
 	local msg = assert(io.readproc(cmd))
 
 	local lines = string.split(string.trim(msg), '\n')
+	while lines:last() and lines:last():match'^%s*$' do
+		lines:remove()
+	end
+
+	assert(#lines > 0, "somehow all the response was empty.")
 
 	-- while we're here, remove the "Untracked files:" section
 	for k=1,#lines do
 		if lines[k] == 'Untracked files:' then
 			local j=k+1
+			if lines[j]:match'^%s*%(use' then j=j+1 end	-- skip tips
+			if lines[j]:match'^%s*$' then j=j+1 end	-- sometimes there's a space next
 			while j <= #lines do
 				if lines[j] == '' then break end
 				j=j+1
@@ -99,7 +106,8 @@ return function(reqdir, gitcmd)
 
 
 	if lines[1]:match'^On branch' then
-
+		lines:remove(1)
+	
 		-- only for this one, go ahead and merge the first \n
 
 		-- first line: "On branch $(branch)"
@@ -135,33 +143,35 @@ return function(reqdir, gitcmd)
 -- but just "changes not staged"
 
 		-- git status, commits to push
-		if lines[2]:match'^Your branch is ahead' then
-			if lines[5] and lines[5]:match'^Changes not staged' then
-				return '❌⬆️ '..reqdir..' ... '..lines[2]..' '..lines[5]
+		if lines[1]:match'^Your branch is ahead' then
+			if lines[4] and lines[4]:match'^Changes not staged' then
+				return '❌⬆️ '..reqdir..' ... '..lines[1]..' '..lines[4]
 			else
-				return '⬆️ '..reqdir..' ... '..lines[2]
+				return '⬆️ '..reqdir..' ... '..lines[1]
 			end
 
-		elseif lines[2]:match'^Your branch is behind' then
-			local summary = lines[2]
-			if lines[5] and lines[5]:match'^Changes not staged' then
-				summary = summary .. ' ' .. lines[5]
+		elseif lines[1]:match'^Your branch is behind' then
+			local summary = lines[1]
+			if lines[4] and lines[4]:match'^Changes not staged' then
+				summary = summary .. ' ' .. lines[4]
 			end
 			return '❌⬇️ '..reqdir..' ... '..summary
 
 		-- git status, all is well
-		elseif lines[2] and lines[2]:match'^Your branch is up.to.date' then
-			if lines[3] and lines[3] == ''
-			and lines[4] and (
-				lines[4]:match'^nothing to commit, working tree clean'
-				or lines[4]:match'^nothing added to commit but untracked files present'
+		elseif lines[1] and lines[1]:match'^Your branch is up.to.date' then
+			local line1 = lines:remove(1)
+			if lines[1] == '' then lines:remove(1) end
+	
+			if lines[1] and (
+				lines[1]:match'^nothing to commit, working tree clean'
+				or lines[1]:match'^nothing added to commit but untracked files present'
 			)
-			and #lines == 4
+			and #lines == 1
 			then
 				return '✅ '..reqdir
 
-			elseif lines[4] and lines[4]:match'^Changes not staged for commit' then
-				return '❌⬆️ '..reqdir..' ... '..lines[2]..' '..lines[4]
+			elseif lines[1] and lines[1]:match'^Changes not staged for commit' then
+				return '❌⬆️ '..reqdir..' ... '..line1..' '..lines[1]
 			end
 		end
 	end
