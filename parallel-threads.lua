@@ -11,8 +11,8 @@ local writeMutex = require 'thread.mutex'()
 _G.writeMutex = writeMutex
 
 -- can I do this in the io.readproc command?
-local setlib = require 'ffi.req' 'c.stdlib'
-setlib.setenv('GIT_TERMINAL_PROMPT', '0', 1)	-- don't wait for input
+local stdlib = require 'ffi.req' 'c.stdlib'
+stdlib.setenv('GIT_TERMINAL_PROMPT', '0', 1)	-- don't wait for input
 
 
 local maxConcurrent = 8	-- = require 'thread'.numThreads()
