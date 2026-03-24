@@ -13,22 +13,17 @@ path(arg[0]):getdir():cd()
 local luagitdir = path:cwd()
 srcdir:cd()
 
-
 local cmd = assert(..., "you forgot to specify a command")
 
--- don't get stuck in recursion
-local checkedCWDs = {}
-local doneProcessingFiles
+local tocheck = require 'git.getgits'()
+
 local maxConcurrent = 4	-- = require 'thread'.numThreads()
-local tocheck = table()	-- mitigate these, only allow 4 checking at a time
 local checking = table()
 xpcall(function()
 	local function handleGitDir(reqdir)
 		-- prevent symlinks piling up
 		path(reqdir):cd()
 		local cwd = path:cwd()
-		if checkedCWDs[cwd.path] then return end
-		checkedCWDs[cwd.path] = true
 
 		local r = {}
 		r.dir = cwd
@@ -89,15 +84,6 @@ xpcall(function()
 			coroutine.yield()
 		end
 	end)
-
-	for f in path'.':rdir(function(f, isdir)
-		local dir, name = path(f):getdir()
-		if name.path == '.git' and isdir then
-			tocheck:insert(dir:fixpathsep())
-			return false	-- don't continue
-		end
-		return true
-	end) do end
 
 	while #threads.threads > 0 do
 		threads:update()

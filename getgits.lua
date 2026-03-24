@@ -12,7 +12,9 @@ return function()
 	local tocheck = table()	-- mitigate these, only allow 4 checking at a time
 	for f in path'.':rdir(function(f, isdir)
 		local dir, name = path(f):getdir()
-		if name.path == '.git' and isdir then
+		if name.path == '.git'
+		--and isdir	-- for subrepos, .git is not a directory
+		then
 			tocheck:insert(dir:fixpathsep())
 			return false	-- don't continue
 		end
